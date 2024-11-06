@@ -1,6 +1,5 @@
-
-use std::io::{BufRead, Seek, SeekFrom};
 use del_msh_core::uniform_mesh::vtx2vtx;
+use std::io::{BufRead, Seek, SeekFrom};
 /*
 use del_geo_core::mat4_col_major::transform_homogeneous;
 use del_geo_core::mat4_col_major::transform_vector;
@@ -148,17 +147,17 @@ fn cast_ray(
     iy: usize,
     img_shape: (usize, usize),
     fov: f32,
-    transform_cam_lcl2glbl: [f32; 16]) -> ([f32; 3], [f32; 3])
-{
+    transform_cam_lcl2glbl: [f32; 16],
+) -> ([f32; 3], [f32; 3]) {
     assert!(ix < img_shape.0 && iy < img_shape.1);
     let focal_dis = 0.5 / (fov / 2.0).to_radians().tan();
-    let (screen_width, screen_height) = if img_shape.0 >  img_shape.1 {
+    let (screen_width, screen_height) = if img_shape.0 > img_shape.1 {
         (img_shape.0 as f32 / img_shape.1 as f32, 1f32)
-    } else{
+    } else {
         (1f32, img_shape.1 as f32 / img_shape.0 as f32)
     };
     let x = ((ix as f32 + 0.5) / img_shape.0 as f32 - 0.5) * screen_width;
-    let y = (0.5 - (iy as f32 + 0.5) / img_shape.1 as f32) *screen_height;
+    let y = (0.5 - (iy as f32 + 0.5) / img_shape.1 as f32) * screen_height;
     let z = focal_dis;
     let mut dir = [x, y, z];
     let mut org = [0.0, 0.0, 0.0];
@@ -193,20 +192,30 @@ fn main() -> anyhow::Result<()> {
     let transform_cam_lcl2glbl = del_geo_core::mat4_col_major::try_inverse(&transform).unwrap();
 
     let mut img = Vec::<image::Rgb<f32>>::new();
-    img.resize(img_shape.0*img_shape.1, image::Rgb([0_f32;3]));
+    img.resize(img_shape.0 * img_shape.1, image::Rgb([0_f32; 3]));
     for iw in 0..img_shape.0 {
         for ih in 0..img_shape.1 {
-            let (ray_org, ray_dir)
-                = cast_ray(iw, ih, img_shape, camera_fov, transform_cam_lcl2glbl);
+            let (ray_org, ray_dir) =
+                cast_ray(iw, ih, img_shape, camera_fov, transform_cam_lcl2glbl);
             // compute intersection below
             let mut t_min = f32::INFINITY;
             for trimesh in trimeshs.iter() {
-                let Some((t, _i_tri)) = del_msh_core::trimesh3_search_bruteforce::first_intersection_ray(
-                    &ray_org, &ray_dir, &trimesh.tri2vtx, &trimesh.vtx2xyz) else { continue; };
-                if t < t_min { t_min = t; }
+                let Some((t, _i_tri)) =
+                    del_msh_core::trimesh3_search_bruteforce::first_intersection_ray(
+                        &ray_org,
+                        &ray_dir,
+                        &trimesh.tri2vtx,
+                        &trimesh.vtx2xyz,
+                    )
+                else {
+                    continue;
+                };
+                if t < t_min {
+                    t_min = t;
+                }
             }
             let v = t_min * 0.05;
-            img[ih*img_shape.0+iw] = image::Rgb([v;3]);
+            img[ih * img_shape.0 + iw] = image::Rgb([v; 3]);
             // dbg!(t_min);
         }
     }
